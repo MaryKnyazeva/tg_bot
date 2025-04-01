@@ -46,10 +46,7 @@ async def send_task(update_or_message, user_id: int):
     import html
     question = html.escape(selected.get('question', ''))
 
-    await update_or_message.reply_text(
-        f"🔹 <b>Задание</b> №{selected['number']}</b>\n\n<b>{question}",
-        parse_mode="HTML"
-    )
+    await update_or_message.reply_text(f"🔹 <b>Задание №{selected['number']}</b>\n\n{question}", parse_mode="HTML")
 
     if selected.get("images"):
         for url in selected["images"]:
