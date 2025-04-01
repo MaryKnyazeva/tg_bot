@@ -57,7 +57,7 @@ async def send_task(update_or_message, user_id: int):
     if "Ответ:" in selected["answer"]:
         await update_or_message.reply_text("✏️ Напишите только цифры, без пробелов, в любом порядке")
     else:
-        await update_or_message.reply_text("✏️ Напишите ответ в любом формате, вам все равно самостоятельно придется сверяться(")
+        await update_or_message.reply_text("✏️ Напишите ответ в любом формате, вам придется самостоятельно сверяться(")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -72,12 +72,22 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     match = re.search(r"Ответ:\s*([0-9]+)", answer_text)
     if match:
         correct = match.group(1)
+        # Вырезаем решение (если есть)
+        solution_match = re.search(r"Решение:\s*(.*?)(?:Ответ:|Источник:|$)", answer_text, re.DOTALL)
+        solution_text = solution_match.group(1).strip() if solution_match else "—"
+
         if ''.join(sorted(user_input)) == ''.join(sorted(correct)):
-            reply = "✅ Верно!"
+            reply = (
+                f"✅ Верно, ты молодец!\n\n"
+                f"🔍 На всякий случай правильный ответ: {correct}\n\n"
+                f"🧠 Решение:\n{solution_text}"
+            )
         else:
-            reply = f"❌ Неверно.\n\n🔍 Правильный ответ: {correct}"
-    else:
-        reply = f"Молодец, ты попытался ответить — это уже успех!\n\n🔍 Правильный ответ:\n{answer_text}"
+            reply = (
+                f"❌ Пока неверно, но в следующий раз всё получится)\n\n"
+                f"🔍 Правильный ответ: {correct}\n\n"
+                f"🧠 Решение:\n{solution_text}"
+            )
 
     keyboard = [[InlineKeyboardButton("➡️ Следующий вопрос", callback_data="next_question")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
