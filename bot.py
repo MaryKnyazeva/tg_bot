@@ -67,17 +67,17 @@ async def main():
     app = ApplicationBuilder().token(os.environ["TOKEN"]).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_answer))
-    await app.run_polling()
+
+    await app.initialize()
+    await app.start()
+    print("🤖 Бот запущен.")
+    await app.updater.start_polling()
+    await app.updater.idle()
+    await app.stop()
+    await app.shutdown()
 
 if __name__ == "__main__":
     import asyncio
-
-    try:
-        asyncio.run(main())
-    except RuntimeError as e:
-        if str(e) == "This event loop is already running":
-            loop = asyncio.get_event_loop()
-            loop.create_task(main())
-            loop.run_forever()
-        else:
-            raise
+    loop = asyncio.get_event_loop()
+    loop.create_task(main())
+    loop.run_forever()
