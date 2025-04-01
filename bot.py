@@ -4,7 +4,7 @@ import random
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
-# Загрузка заданий из tasks.json
+# Загрузка заданий
 with open("tasks.json", "r", encoding="utf-8") as f:
     tasks_data = json.load(f)
 
@@ -14,7 +14,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     selected = random.choice(tasks_data)
     user_states[user_id] = selected
-    await update.message.reply_text(f"Привет! Вот случайное задание:\n\n{selected['question']}")
+
+    await update.message.reply_text(f"Привет! Вот задание №{selected['number']}:\n\n{selected['question']}")
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -24,11 +25,13 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_input.lower() in correct.lower():
         reply = "✅ Верно!"
     else:
-        reply = f"❌ Неверно. Правильный ответ:\n{correct}"
+        reply = f"❌ Неверно.\n\n🔍 Правильный ответ:\n{correct}"
 
+    # Новое задание
     selected = random.choice(tasks_data)
     user_states[user_id] = selected
-    reply += f"\n\n📘 Следующее задание:\n\n{selected['question']}"
+
+    reply += f"\n\n📘 Следующее задание №{selected['number']}:\n\n{selected['question']}"
     await update.message.reply_text(reply)
 
 async def main():
@@ -39,6 +42,4 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
-    loop = asyncio.get_event_loop()
-    loop.create_task(main())
-    loop.run_forever()
+    asyncio.run(main())
