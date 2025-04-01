@@ -4,7 +4,7 @@ import random
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
-# Загрузка заданий
+# Загружаем задания
 with open("tasks.json", "r", encoding="utf-8") as f:
     tasks_data = json.load(f)
 
@@ -14,7 +14,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     selected = random.choice(tasks_data)
     user_states[user_id] = selected
-
     await update.message.reply_text(f"Привет! Вот задание №{selected['number']}:\n\n{selected['question']}")
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -27,30 +26,26 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         reply = f"❌ Неверно.\n\n🔍 Правильный ответ:\n{correct}"
 
-    # Новое задание
     selected = random.choice(tasks_data)
     user_states[user_id] = selected
-
     reply += f"\n\n📘 Следующее задание №{selected['number']}:\n\n{selected['question']}"
     await update.message.reply_text(reply)
 
-async def main():
+# 🚀 Старт без asyncio.run()
+if __name__ == "__main__":
     app = ApplicationBuilder().token(os.environ["TOKEN"]).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_answer))
-    await app.run_polling()
 
-if __name__ == "__main__":
+    # Ручной запуск — без закрытия event loop
     import asyncio
 
-    try:
-        asyncio.run(main())
-    except RuntimeError as e:
-        if str(e) == "This event loop is already running":
-            loop = asyncio.get_event_loop()
-            loop.create_task(main())
-            loop.run_forever()
-        else:
-            raise
+    async def run_bot():
+        await app.initialize()
+        await app.start()
+        print("🤖 Бот запущен!")
+        await app.updater.start_polling()
+        await app.updater.idle()
 
-
+    asyncio.get_event_loop().create_task(run_bot())
+    asyncio.get_event_loop().run_forever()
