@@ -47,7 +47,7 @@ async def send_task(update_or_message, user_id: int):
     question = html.escape(selected.get('question', ''))
 
     await update_or_message.reply_text(
-        f"🔹 <b>Задание №{selected['number']}</b>\n\n<b>{question}</b>",
+        f"🔹 <b>Задание</b> №{selected['number']}</b>\n\n<b>{question}",
         parse_mode="HTML"
     )
 
