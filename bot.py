@@ -69,12 +69,13 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     current = user_states.get(user_id, {})
     answer_text = current.get("answer", "")
 
+    # Вырезаем решение (если есть)
+    solution_match = re.search(r"Решение:\s*(.*?)(?:Ответ:|Источник:|$)", answer_text, re.DOTALL)
+    solution_text = solution_match.group(1).strip() if solution_match else "—"
+
     match = re.search(r"Ответ:\s*([0-9]+)", answer_text)
     if match:
         correct = match.group(1)
-        # Вырезаем решение (если есть)
-        solution_match = re.search(r"Решение:\s*(.*?)(?:Ответ:|Источник:|$)", answer_text, re.DOTALL)
-        solution_text = solution_match.group(1).strip() if solution_match else "—"
 
         if ''.join(sorted(user_input)) == ''.join(sorted(correct)):
             reply = (
