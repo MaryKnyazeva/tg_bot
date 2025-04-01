@@ -43,7 +43,7 @@ async def send_task(update_or_message, user_id: int):
     selected = random.choice(tasks_data)
     user_states[user_id] = selected
 
-    await update_or_message.reply_text(f"🔹 <b>Задание №{selected['number']}</b>\n\n<b>{selected.get('question', '')}</b>")
+    await update_or_message.reply_text(f"🔹 <b>Задание №{selected['number']}</b>\n\n<b>{question}</b>", parse_mode="HTML")
 
     if selected.get("images"):
         for url in selected["images"]:
