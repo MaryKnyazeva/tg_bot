@@ -1,8 +1,16 @@
 import os
 import json
 import random
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+import re
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    CallbackQueryHandler,
+    ContextTypes,
+    filters
+)
 
 # Загружаем задания
 with open("tasks.json", "r", encoding="utf-8") as f:
@@ -31,56 +39,64 @@ def format_table_from_text(raw_text: str) -> str:
 
     return "📊 Таблица:\n" + "\n".join(table)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
+async def send_task(update_or_message, user_id: int):
     selected = random.choice(tasks_data)
     user_states[user_id] = selected
 
-    await update.message.reply_text(f"📘 Задание №{selected['number']}:\n\n{selected['question']}")
+    await update_or_message.reply_text(f"📘 Задание №{selected['number']}:\n\n{selected.get('question', '')}")
 
     if selected.get("images"):
         for url in selected["images"]:
-            await update.message.reply_photo(photo=url)
+            await update_or_message.reply_photo(photo=url)
 
     if "Таблица:" in selected["answer"]:
         table_raw = selected["answer"].split("Таблица:")[-1].split("Решение:")[0].strip()
         pretty_table = format_table_from_text(table_raw)
-        await update.message.reply_text(pretty_table)
+        await update_or_message.reply_text(pretty_table)
 
-    await update.message.reply_text("✏️ Введите свой ответ:")
+    if "Ответ:" in selected["answer"]:
+        await update_or_message.reply_text("✏️ Напишите только цифры, без пробелов, в любом порядке")
+    else:
+        await update_or_message.reply_text("✏️ Напишите ответ в любом формате, вам все равно самостоятельно придется сверяться(")
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    await send_task(update.message, user_id)
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user_input = update.message.text.strip()
-    correct = user_states.get(user_id, {}).get("answer", "")
+    current = user_states.get(user_id, {})
+    answer_text = current.get("answer", "")
 
-    if user_input.lower() in correct.lower():
-        reply = "✅ Верно!"
+    match = re.search(r"Ответ:\s*([0-9]+)", answer_text)
+    if match:
+        correct = match.group(1)
+        if ''.join(sorted(user_input)) == ''.join(sorted(correct)):
+            reply = "✅ Верно!"
+        else:
+            reply = f"❌ Неверно.\n\n🔍 Правильный ответ: {correct}"
     else:
-        reply = f"❌ Неверно.\n\n🔍 Правильный ответ:\n{correct}"
+        reply = f"Молодец, ты попытался ответить — это уже успех!\n\n🔍 Правильный ответ:\n{answer_text}"
 
-    selected = random.choice(tasks_data)
-    user_states[user_id] = selected
+    keyboard = [[InlineKeyboardButton("➡️ Следующий вопрос", callback_data="next_question")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(reply)
-    await update.message.reply_text(f"\n📘 Следующее задание №{selected['number']}:\n\n{selected['question']}")
+    await update.message.reply_text(reply, reply_markup=reply_markup)
 
-    if selected.get("images"):
-        for url in selected["images"]:
-            await update.message.reply_photo(photo=url)
+async def next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+    await send_task(query.message, user_id)
 
-    if "Таблица:" in selected["answer"]:
-        table_raw = selected["answer"].split("Таблица:")[-1].split("Решение:")[0].strip()
-        pretty_table = format_table_from_text(table_raw)
-        await update.message.reply_text(pretty_table)
-
-    await update.message.reply_text("✏️ Введите свой ответ:")
-
-# 🚀 Старт без asyncio.run()
+# 🚀 Запуск
 if __name__ == "__main__":
     app = ApplicationBuilder().token(os.environ["TOKEN"]).build()
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_answer))
+    app.add_handler(CallbackQueryHandler(next_question, pattern="^next_question$"))
 
     import asyncio
 
