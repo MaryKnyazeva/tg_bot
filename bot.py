@@ -43,7 +43,13 @@ async def send_task(update_or_message, user_id: int):
     selected = random.choice(tasks_data)
     user_states[user_id] = selected
 
-    await update_or_message.reply_text(f"🔹 <b>Задание №{selected['number']}</b>\n\n<b>{question}</b>", parse_mode="HTML")
+    import html
+    question = html.escape(selected.get('question', ''))
+
+    await update_or_message.reply_text(
+        f"🔹 <b>Задание №{selected['number']}</b>\n\n<b>{question}</b>",
+        parse_mode="HTML"
+    )
 
     if selected.get("images"):
         for url in selected["images"]:
@@ -58,6 +64,7 @@ async def send_task(update_or_message, user_id: int):
         await update_or_message.reply_text("✏️ Напишите только цифры, без пробелов, в любом порядке")
     else:
         await update_or_message.reply_text("✏️ Напишите ответ в любом формате, вам придется самостоятельно сверяться(")
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
