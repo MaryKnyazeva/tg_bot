@@ -10,7 +10,7 @@ from telegram.ext import (
     MessageHandler,
     CallbackQueryHandler,
     ContextTypes,
-    filters
+    filters,
 )
 
 # Загружаем задания
@@ -107,12 +107,16 @@ async def next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_task(query.message, user_id)
 
 # 🚀 Запуск
-if __name__ == "__main__":
+async def main():
     app = ApplicationBuilder().token(os.environ["TOKEN"]).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_answer))
     app.add_handler(CallbackQueryHandler(next_question, pattern="^next_question$"))
 
+    print("🤖 Бот запущен!")
+    await app.run_polling()
+
+if __name__ == "__main__":
     import asyncio
-    asyncio.run(app.run_polling())
+    asyncio.run(main())
