@@ -121,8 +121,7 @@ if __name__ == "__main__":
         await app.initialize()
         await app.start()
         print("🤖 Бот запущен!")
-        await app.updater.start_polling()
-        await app.updater.idle()
+        await app.run_polling()
 
     asyncio.get_event_loop().create_task(run_bot())
     asyncio.get_event_loop().run_forever()
