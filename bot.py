@@ -107,7 +107,7 @@ async def next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_task(query.message, user_id)
 
 # 🚀 Запуск
-async def main():
+def main():
     app = ApplicationBuilder().token(os.environ["TOKEN"]).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -115,8 +115,7 @@ async def main():
     app.add_handler(CallbackQueryHandler(next_question, pattern="^next_question$"))
 
     print("🤖 Бот запущен!")
-    await app.run_polling()
+    app.run_polling()
 
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    main()
