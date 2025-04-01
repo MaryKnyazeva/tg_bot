@@ -37,13 +37,13 @@ def format_table_from_text(raw_text: str) -> str:
             table.append(format_row(row))
     table.append(border_bot)
 
-    return "📊 Таблица:\n" + "\n".join(table)
+    return "Таблица:\n" + "\n".join(table)
 
 async def send_task(update_or_message, user_id: int):
     selected = random.choice(tasks_data)
     user_states[user_id] = selected
 
-    await update_or_message.reply_text(f"📘 Задание №{selected['number']}:\n\n{selected.get('question', '')}")
+    await update_or_message.reply_text(f"🔹 <b>Задание №{selected['number']}</b>\n\n<b>{selected.get('question', '')}</b>")
 
     if selected.get("images"):
         for url in selected["images"]:
@@ -85,12 +85,12 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         else:
             reply = (
-                f"❌ Пока неверно, но в следующий раз всё получится)\n\n"
+                f"🤔 Пока неверно, но в следующий раз всё получится)\n\n"
                 f"🔍 Правильный ответ: {correct}\n\n"
                 f"🧠 Решение:\n{solution_text}"
             )
     else:
-        reply = f"Молодец, что ответил! Теперь пора сверяться:\n\n🧠 Решение:\n{solution_text}"
+        reply = f"Молодец, что ответил 🤗! Теперь пора сверяться:\n\n🧠 Решение:\n{solution_text}"
 
     keyboard = [[InlineKeyboardButton("➡️ Следующий вопрос", callback_data="next_question")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
