@@ -2,6 +2,7 @@ import os
 import json
 import random
 import re
+import html
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -42,11 +43,12 @@ def format_table_from_text(raw_text: str) -> str:
 async def send_task(update_or_message, user_id: int):
     selected = random.choice(tasks_data)
     user_states[user_id] = selected
-
-    import html
     question = html.escape(selected.get('question', ''))
 
-    await update_or_message.reply_text(f"🔹 <b>Задание №{selected['number']}</b>\n\n{question}", parse_mode="HTML")
+    await update_or_message.reply_text(
+        f"🔹 <b>Задание №{selected['number']}</b>\n\n{question}",
+        parse_mode="HTML"
+    )
 
     if selected.get("images"):
         for url in selected["images"]:
@@ -62,7 +64,6 @@ async def send_task(update_or_message, user_id: int):
     else:
         await update_or_message.reply_text("✏️ Напишите ответ в любом формате, вам придется самостоятельно сверяться(")
 
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     await send_task(update.message, user_id)
@@ -73,14 +74,12 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     current = user_states.get(user_id, {})
     answer_text = current.get("answer", "")
 
-    # Вырезаем решение (если есть)
     solution_match = re.search(r"Решение:\s*(.*?)(?:Ответ:|Источник:|$)", answer_text, re.DOTALL)
     solution_text = solution_match.group(1).strip() if solution_match else "—"
 
     match = re.search(r"Ответ:\s*([0-9]+)", answer_text)
     if match:
         correct = match.group(1)
-
         if ''.join(sorted(user_input)) == ''.join(sorted(correct)):
             reply = (
                 f"✅ Верно, ты молодец!\n\n"
@@ -116,12 +115,4 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(next_question, pattern="^next_question$"))
 
     import asyncio
-
-    async def run_bot():
-        await app.initialize()
-        await app.start()
-        print("🤖 Бот запущен!")
-        await app.run_polling()
-
-    asyncio.get_event_loop().create_task(run_bot())
-    asyncio.get_event_loop().run_forever()
+    asyncio.run(app.run_polling())
