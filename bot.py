@@ -88,6 +88,8 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"🔍 Правильный ответ: {correct}\n\n"
                 f"🧠 Решение:\n{solution_text}"
             )
+    else:
+        reply = f"Молодец, что ответил! Теперь пора сверяться:\n\n🧠 Решение:\n{solution_text}"
 
     keyboard = [[InlineKeyboardButton("➡️ Следующий вопрос", callback_data="next_question")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
