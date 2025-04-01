@@ -1,17 +1,11 @@
-import os
+import json
 import time
-import random
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 from selenium import webdriver as gs
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 
-# ------------------------------
-# Парсинг с сайта
-# ------------------------------
 def fetch_tasks_from_site():
     options = Options()
     options.add_argument("user-agent=Mozilla/5.0 (X11; Linux x86_64)")
@@ -27,7 +21,6 @@ def fetch_tasks_from_site():
     driver.get("https://neofamily.ru/biologiya/task-bank?sections=33&themes=152")
     time.sleep(3)
 
-    # Скроллим до конца страницы
     last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -92,41 +85,8 @@ def fetch_tasks_from_site():
     driver.quit()
     return results
 
-# ------------------------------
-# Telegram-бот
-# ------------------------------
-tasks_data = fetch_tasks_from_site()
-user_states = {}
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    selected = random.choice(tasks_data)
-    user_states[user_id] = selected
-    await update.message.reply_text(f"Привет! Вот случайное задание:\n\n{selected['question']}")
-
-async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    user_input = update.message.text.strip()
-    correct = user_states.get(user_id, {}).get("answer", "")
-
-    if user_input.lower() in correct.lower():
-        reply = "✅ Верно!"
-    else:
-        reply = f"❌ Неверно. Правильный ответ:\n{correct}"
-
-    selected = random.choice(tasks_data)
-    user_states[user_id] = selected
-    reply += f"\n\n📘 Следующее задание:\n\n{selected['question']}"
-    await update.message.reply_text(reply)
-
-async def main():
-    app = ApplicationBuilder().token(os.environ["TOKEN"]).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_answer))
-    await app.run_polling()
-
-if __name__ == "__main__":
-    import asyncio
-    loop = asyncio.get_event_loop()
-    loop.create_task(main())
-    loop.run_forever()
+if __name__ == '__main__':
+    tasks = fetch_tasks_from_site()
+    with open("tasks.json", "w", encoding="utf-8") as f:
+        json.dump(tasks, f, ensure_ascii=False, indent=2)
+    print(f"✅ Сохранено заданий: {len(tasks)} в tasks.json")
